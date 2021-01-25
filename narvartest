@@ -1,0 +1,215 @@
+        {% for tracking in fulfillment.tracking_company %}
+{% endfor %}
+{% case fulfillment.tracking_company %}
+{% when 'UPS Ground' %}
+{% assign fulfillment_tracking_code = 'UPS' %}
+{% when 'Fedex Ground' %}
+{% assign fulfillment_tracking_code = 'Fedex' %}
+{% else %}
+{% assign fulfillment_tracking_code = 'carrier' %}
+{% endcase %}
+<section class="border border-solid border-gray-200 shadow-card rounded-e4 mb-e40 lg:mb-e80">
+  <div class="flex items-center flex-wrap md:flex-no-wrap bg-white-100 px-e16 py-e24 md:px-e40 md:py-e28">
+    <div><span class="font-e18 font-medium mr-4 md:mr-e24">Order Placed:</span> {{order.created_at | date: '%b %d, %Y'}}</div>
+    <div class="mt-e4 md:mt-0 md:ml-e80"><span class="font-e18 font-medium mr-4 md:mr-e24">Total:</span> {{- order.total_price | money -}}</div>
+    {%- if order.cancelled -%}
+    <div class="ml-4 justify-self-end ms:ml-auto mt-e4 md:mt-0 md:ml-e80"><span class="text-e10 uppercase p-2 text-red-700 shadow-card bg-white font-medium mr-4 md:mr-e24">Cancelled</span></div>
+    {%- endif -%}
+  </div>
+  {%- comment -%}
+  <div class="px-e16 py-e24 md:p-e40 bg-white border-b border-solid border-gray-200">
+    <h5 class="block mt0 mb05">{{ 'customer.account.date_colon' | t }} </h5>
+
+    <div class="order__meta order__meta--total inline-block">
+      <span>{{- 'customer.account.total_colon' | t -}}</span><span></span>
+    </div>
+    <div class="order__meta inline-block">
+      <span>{{- 'customer.account.payment_colon' | t -}}</span><span>{{- order.financial_status_label -}}</span>
+    </div>
+    <div class="order__meta inline-block">
+      <span>{{- 'customer.account.shipping_colon' | t -}}</span><span>{{- order.fulfillment_status_label -}}</span>
+    </div>
+  </div>
+  {%- endcomment -%}
+  
+
+  <div class="px-e16 py-e24 md:p-e40 bg-white border-b border-solid border-gray-200">
+    <div class="grid grid-cols-12">
+      <div class="col-span-12 md:col-span-9 grid grid-cols-1 gap-e24 md:grid-cols-2">
+        <div>
+          <h4 class="text-e18 font-medium mb-e16">Shipping Address:</h4>
+          {%- assign shipping = order.shipping_address -%}
+          {%- include 'account-order-address',
+            shipping: order.shipping_address,
+            name: shipping.name,
+            company: shipping.company,
+            street: shipping.street,
+            city: shipping.city,
+            province: shipping.province,
+            zip: shipping.zip,
+            country: shipping.country,
+            phone: shipping.phone -%}
+          {%- assign shipping = nil -%}
+  
+          {%- if order.shipping_methods.size > 0 -%}
+          <h4 class="text-e18 font-medium mb-e16">Shipping Method:</h4>
+          {%- for ship in order.shipping_methods -%}
+          
+            {{%for​ ​tracking​ ​in​ ​fulfillment.tracking_company​ ​%}}
+          
+          <div class="text-body-md">
+            <h6 class="block">{{- ship.title | replace: 'Shipping', '' -}}</h6>
+            <p class="block">{{- ship.price | money -}}</p>
+          </div>
+          {%- endfor -%}
+          {%- endif -%}
+
+          {%- if order.cancelled -%}
+            {%- assign cancelled_at = order.cancelled_at | date: "%b %d, %Y @ %I:%M %p" -%}
+            {%- capture alert_message -%}
+              <p class="text-e12 font-medium mb-e16 mt-4 p-2 text-red-700 tracking-wide">Cancelled: {{ cancelled_at }}</p>
+              <p class="text-e12 font-medium mb-e8 p-2 text-red-700 tracking-wide">Reason: {{ order.cancel_reason | capitalize }}</p>
+            {%- endcapture -%}
+            {%- assign cancelled_at = nil -%}
+            {%- assign alert_type = 'error' -%}
+            {{- alert_message  -}}
+            {%- assign alert_type = nil -%}
+            {%- assign alert_message = nil -%}
+          {%- endif -%}
+        </div>
+  
+        <div>
+          {%- if order.billing_address != blank -%}
+          <h4 class="text-e18 font-medium mb-e16">Billing Address:</h4>
+          {%- assign billing = order.billing_address -%}
+          {%- include 'account-order-address',
+            name: billing.name,
+            company: billing.company,
+            street: billing.street,
+            city: billing.city,
+            province: billing.province,
+            zip: billing.zip,
+            country: billing.country,
+            phone: billing.phone -%}
+          {%- assign billing = nil -%}
+          {%- endif -%}
+        </div>
+      </div>
+     
+  
+      <div class="col-span-12 md:col-span-3">
+
+      {% if fulfillment.tracking_number  != 'blank' %}
+          <a is="BtnTertiaryLink" class="uppercase mb-e20" href="https://juicedbikes.narvar.com/juicedbikes/tracking/{{fulfillment_tracking_code}}?tracking_numbers={{fulfillment.tracking_number}}&amp;order_number={{order_name|remove:"#"}}&amp;service={{shipping_method_code}}&amp;ozip=91911&amp;dzip={{shipping_address.zip}}&amp;order_date={{order.created_at}}&amp;ship_date={{fulfillment.created_at}}">Track Package</a>
+      {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <ul>
+    {%- for item in order.line_items -%}
+      {%- assign url = item.product.url -%}
+      {%- assign image = item.image | img_url: '350x' -%}
+      {%- assign title = item.product.title -%}
+      {%- assign variant = item.variant -%}
+      {%- assign price = item.price -%}
+      {%- assign props = item.properties -%}
+      {%- assign sku = item.sku -%}
+      {%- assign quantity = item.quantity -%}
+      {%- assign created_at = item.fulfillment.created_at | date: '%b %d, %Y' -%}
+      {%- assign tracking_url = line_item.fulfillment.tracking_url -%}
+      {%- assign tracking_number = line_item.fulfillment.tracking_number -%}
+
+      <li class="px-e16 py-e24 md:px-e40 md:py-e16 bg-white border-b border-solid border-gray-200 grid grid-cols-12 md:items-center">
+        <div class="block ratio ro-78 col-span-12 md:col-span-3">
+          <a href="{{- url -}}"><img src="{{- image -}}" class="absolute inset-0 w-full h-full object-contain object-position-center"/></a>
+        </div>
+
+        <div class="col-span-6 md:col-span-6 md:pl-e16">
+          <a href="{{- url -}}"><h4 class="text-e18 font-medium tracking-wide">{{- title -}}</h4></a>
+          <div class="text-gray-700 text-e14">
+            {%- if variant and variant.title != 'Default title'%}<p class="p2">{{- variant.title -}}</p>{%- endif -%}
+            {%- if quantity > 1 -%}<p class="text-e14">Qty: {{- quantity -}}</p>{%- endif -%}
+            {%- if sku != blank -%}<p class="text-e14">SKU: {{- sku -}}</p>{%- endif -%}
+            {%- unless item.product.has_only_default_variant -%}
+              {%- for option in item.variant.options -%}
+              <p class="text-e14">{{- option -}}</p>
+              {%- endfor -%}
+            {%- endunless -%}
+            {%- unless props == 'empty '%}
+            <div class="mt05">
+              {%- for p in props -%}
+                <p class="p3">{{ p.first }}: {{ p.last }}</p>
+              {%- endfor -%}
+            </div>
+            {%- endunless -%}
+          </div>
+          {%comment%}
+          {%- if item.fulfillment and tracking_number -%}
+            <div class="mt05">
+              <a href="{{- tracking_url -}}" class="order__meta inline-block h5">
+                <span>{{- 'customer.account.track_colon' | t -}}</span><span>{{- tracking_number -}}</span>
+              </a>
+            </div>
+          {%- endif -%}
+          {%endcomment%}
+        </div>
+
+        <div class="col-span-6 md:col-span-3 text-right">
+          <h4 class="text-e18">{{- quantity | times: price | money -}}</h4>
+        </div>
+      </li>
+      {%- assign url = nil -%}
+      {%- assign image = nil -%}
+      {%- assign title = nil -%}
+      {%- assign variant = nil -%}
+      {%- assign price = nil -%}
+      {%- assign props = nil -%}
+      {%- assign sku = nil -%}
+      {%- assign quantity = nil -%}
+      {%- assign created_at = nil -%}
+      {%- assign tracking_url = nil -%}
+      {%- assign tracking_number = nil -%}
+    {%- endfor -%}
+  </ul>
+
+  <div class="px-e16 py-e24 md:p-e40 bg-white border-b border-solid border-gray-200">
+    <div class="md:w-6/12 md:ml-auto">
+      <div class="grid grid-cols-2">
+        {%- assign subtotal = order.subtotal_price | money -%}
+        {%- assign total = order.total_price | money -%}
+
+        <h6 class="py-e8 text-e18 text-gray-700">Subtotal:</h6>
+        <p class="py-e8 text-e18 text-gray-700 text-right">{{- subtotal -}}</p>
+
+        {%- if order.discounts.size > 0 -%}
+          {%- for discount in order.discounts -%}
+            <h6 class="py-e8 text-e18 text-gray-700">Discount({{- discount.code -}})</h6>
+            <p class="py-e8 text-e18 text-gray-700 text-right">{{- discount.savings | money -}}</p>
+          {%- endfor -%}
+        {%- endif -%}
+
+        {%- if order.tax_lines.size > 0 -%}
+          {%- for tax in order.tax_lines -%}
+            <h6 class="py-e8 text-e18 text-gray-700">{{- tax.title -}} ({{- tax.rate | times: 100 -}}%)</h6>
+            <p class="py-e8 text-e18 text-gray-700 text-right">{{- tax.price | money -}}</p>
+          {%- endfor -%}
+        {%- endif -%}
+
+        <h6 class="py-e8 text-e18 text-gray-700">Shipping:</h6>
+        {%- if order.shipping_price == 0 -%}
+        <p class="py-e8 text-e18 text-gray-700 text-right">Free</p>
+        {%- else -%}
+        <p class="py-e8 text-e18 text-gray-700 text-right">{{- order.shipping_price | money -}}</p>
+        {%- endif -%}
+
+        <h6 class="py-e8 text-e18 text-black font-medium">Total:</h6>
+        <p class="py-e8 text-e18 text-black font-medium text-right">{{- total -}}</p>
+
+        {%- assign subtotal = nil -%}
+        {%- assign total = nil -%}
+      </div>
+    </div>
+  </div>
+
+</section>
