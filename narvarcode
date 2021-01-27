@@ -1,0 +1,81 @@
+{% assign raw_carrier = fulfillment.tracking_company | downcase %} {% if raw_carrier contains 'ups' %} {% assign fulfillment_tracking_code = 'UPS' %} {% elseif raw_carrier contains 'united parcel service' %} {% assign fulfillment_tracking_code = 'UPS' %} {% elseif raw_carrier contains 'fedex ' %} {% assign fulfillment_tracking_code = 'FEDEX' %} {% else raw_carrier %} {% assign fulfillment_tracking_code='carrier' %} {% endif %}
+Order Placed: {{order.created_at | date: '%b %d, %Y'}}
+Total: {{- order.total_price | money -}}
+{%- if order.cancelled -%}
+Cancelled
+{%- endif -%}
+{%- comment -%}
+{{ 'customer.account.date_colon' | t }}
+{{- 'customer.account.total_colon' | t -}}
+{{- 'customer.account.payment_colon' | t -}}{{- order.financial_status_label -}}
+{{- 'customer.account.shipping_colon' | t -}}{{- order.fulfillment_status_label -}}
+{%- endcomment -%}
+Shipping Address:
+{%- assign shipping = order.shipping_address -%} {%- include 'account-order-address', shipping: order.shipping_address, name: shipping.name, company: shipping.company, street: shipping.street, city: shipping.city, province: shipping.province, zip: shipping.zip, country: shipping.country, phone: shipping.phone -%} {%- assign shipping = nil -%} {%- if order.shipping_methods.size > 0 -%}
+Shipping Method:
+{%- for ship in order.shipping_methods -%} {{%for​ ​tracking​ ​in​ ​fulfillment.tracking_company​ ​%}}
+{{- ship.title | replace: 'Shipping', '' -}}
+
+{{- ship.price | money -}}
+{%- endfor -%} {%- endif -%} {%- if order.cancelled -%} {%- assign cancelled_at = order.cancelled_at | date: "%b %d, %Y @ %I:%M %p" -%} {%- capture alert_message -%}
+
+Cancelled: {{ cancelled_at }}
+
+Reason: {{ order.cancel_reason | capitalize }}
+{%- endcapture -%} {%- assign cancelled_at = nil -%} {%- assign alert_type = 'error' -%} {{- alert_message -}} {%- assign alert_type = nil -%} {%- assign alert_message = nil -%} {%- endif -%}
+{%- if order.billing_address != blank -%}
+Billing Address:
+{%- assign billing = order.billing_address -%} {%- include 'account-order-address', name: billing.name, company: billing.company, street: billing.street, city: billing.city, province: billing.province, zip: billing.zip, country: billing.country, phone: billing.phone -%} {%- assign billing = nil -%} {%- endif -%}
+{% if fulfillment.tracking_number != 'blank' %} Track Package {% endif %}
+
+    {%- for item in order.line_items -%} {%- assign url = item.product.url -%} {%- assign image = item.image | img_url: '350x' -%} {%- assign title = item.product.title -%} {%- assign variant = item.variant -%} {%- assign price = item.price -%} {%- assign props = item.properties -%} {%- assign sku = item.sku -%} {%- assign quantity = item.quantity -%} {%- assign created_at = item.fulfillment.created_at | date: '%b %d, %Y' -%} {%- assign tracking_url = line_item.fulfillment.tracking_url -%} {%- assign tracking_number = line_item.fulfillment.tracking_number -%}
+    {{- title -}}
+    {%- if variant and variant.title != 'Default title'%}
+
+    {{- variant.title -}}
+    {%- endif -%} {%- if quantity > 1 -%}
+
+    Qty: {{- quantity -}}
+    {%- endif -%} {%- if sku != blank -%}
+
+    SKU: {{- sku -}}
+    {%- endif -%} {%- unless item.product.has_only_default_variant -%} {%- for option in item.variant.options -%}
+
+    {{- option -}}
+    {%- endfor -%} {%- endunless -%} {%- unless props == 'empty '%}
+    {%- for p in props -%}
+
+    {{ p.first }}: {{ p.last }}
+    {%- endfor -%}
+    {%- endunless -%}
+    {%comment%} {%- if item.fulfillment and tracking_number -%}
+    {{- 'customer.account.track_colon' | t -}}{{- tracking_number -}}
+    {%- endif -%} {%endcomment%}
+    {{- quantity | times: price | money -}}
+    {%- assign url = nil -%} {%- assign image = nil -%} {%- assign title = nil -%} {%- assign variant = nil -%} {%- assign price = nil -%} {%- assign props = nil -%} {%- assign sku = nil -%} {%- assign quantity = nil -%} {%- assign created_at = nil -%} {%- assign tracking_url = nil -%} {%- assign tracking_number = nil -%} {%- endfor -%} 
+
+{%- assign subtotal = order.subtotal_price | money -%} {%- assign total = order.total_price | money -%}
+Subtotal:
+
+{{- subtotal -}}
+{%- if order.discounts.size > 0 -%} {%- for discount in order.discounts -%}
+Discount({{- discount.code -}})
+
+{{- discount.savings | money -}}
+{%- endfor -%} {%- endif -%} {%- if order.tax_lines.size > 0 -%} {%- for tax in order.tax_lines -%}
+{{- tax.title -}} ({{- tax.rate | times: 100 -}}%)
+
+{{- tax.price | money -}}
+{%- endfor -%} {%- endif -%}
+Shipping:
+{%- if order.shipping_price == 0 -%}
+
+Free
+{%- else -%}
+
+{{- order.shipping_price | money -}}
+{%- endif -%}
+Total:
+
+{{- total -}}
+{%- assign subtotal = nil -%} {%- assign total = nil -%}
